@@ -7,7 +7,7 @@ type ChatProps = {
 }
 
 function ChatMessage({ chat }: ChatProps) {
-  const { sender, content, createdAt } = chat
+  const { sender, content, createdAt, sameTime } = chat
   return (
     <div>
       <div
@@ -22,7 +22,7 @@ function ChatMessage({ chat }: ChatProps) {
         >
           {content}
         </div>
-        {createdAt && <div className="chat-time">{createdAt}</div>}
+        {sameTime === 1 && <div className="chat-time">{createdAt}</div>}
       </div>
 
       <style jsx>{`

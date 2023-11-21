@@ -3,76 +3,93 @@
 import Wrapper from '../components/Wrapper'
 import ChatMessage from './message'
 
+import { useCallback, useEffect, useState } from 'react'
+
+import app from '../../firebase'
+import { auth } from '../../firebase'
+import { getDatabase, onValue, push, ref } from 'firebase/database'
+import { ContentType } from '../history/album'
+
 export type ChatType = {
   id: string
   sender: string
   createdAt: string
   content: string
-  sameTime: number
 }
 
 //4. 채팅화면
 export default function Chat() {
-  const chatting = [
-    {
-      id: 'a1',
-      sender: '1',
-      receiver: '2',
-      createdAt: '15:01',
-      content: '나 지금 도착했어',
-    },
-    {
-      id: 'a2',
-      sender: '2',
-      receiver: '1',
-      createdAt: '15:04',
-      content: '아 진짜?',
-    },
-    {
-      id: 'a3',
-      sender: '2',
-      receiver: '1',
-      createdAt: '15:04',
-      content: '난 아직 버스야 ㅠㅠ',
-    },
-    {
-      id: 'a4',
-      sender: '2',
-      receiver: '1',
-      createdAt: '15:05',
-      content:
-        '추우면 먼저 들어가있어! 옆에 아마 우리 얼마 전에 봤던 카페 있을텐데 자리가 있을지는 모르겠당',
-    },
-  ]
+  const [chatMessages, setChatMessages] = useState<ChatType[]>([])
+  const [inputMessage, setInputMessage] = useState('')
 
-  let previousTime = ''
-  const newChatData = chatting.map((chat) => {
-    const sameTime = chat.createdAt === previousTime ? 0 : 1
-    previousTime = chat.createdAt
+  const database = getDatabase(app)
 
-    return { ...chat, sameTime }
-  })
+  const user = auth.currentUser
+  const userId = user?.uid
+
+  const addMessage = async (
+    sender: string,
+    content: string,
+    createdAt: string,
+  ) => {
+    const chatRef = ref(database, `chatMessages/${userId}`)
+    try {
+      await push(chatRef, {
+        sender,
+        content,
+        createdAt,
+      })
+      getChatMessages(setChatMessages)
+      setInputMessage('')
+    } catch (e) {
+      console.error('Error adding message: ', e)
+    }
+  }
+  const getChatMessages = (callback: (messages: ChatType[]) => void) => {
+    const chatRef = ref(database, `chatMessages/${userId}`)
+    onValue(chatRef, (snapshot) => {
+      const messages: ChatType[] = []
+      snapshot.forEach((childSnapshot) => {
+        messages.push({ id: childSnapshot.key, ...childSnapshot.val() })
+      })
+      callback(messages)
+    })
+  }
+
+  useEffect(() => {
+    getChatMessages(setChatMessages)
+  }, [])
+
+  const handleChatChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setInputMessage(e.target.value)
+    },
+    [],
+  )
+  const handleSubmit = () => {
+    const sender = '2'
+    const createdAt = new Date().toLocaleTimeString()
+    addMessage(sender, inputMessage, createdAt)
+  }
 
   return (
     <Wrapper>
       <div className="chatting">
         <div className="chatting-wrapper">
-          {newChatData.map((chat) => (
+          {chatMessages.map((chat) => (
             <ChatMessage key={chat.id} chat={chat}></ChatMessage>
           ))}
         </div>
 
         <div className="chatting-input">
-          <input type="file" style={{ display: 'none' }} id="input-file" />
-          <label className="input-file__label" htmlFor="input-file">
-            <img src="image-upload.svg" />
-          </label>
           <input
             className="chatting-input__text"
             placeholder="메시지를 입력해주세요!"
+            onChange={handleChatChange}
+            value={inputMessage}
           />
           <div className="send-chat-wrapper">
-            <img src="send-chat.svg" />
+            <img src="send-chat.svg" alt="submit_btn" onClick={handleSubmit} />
           </div>
         </div>
       </div>
