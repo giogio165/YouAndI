@@ -32,7 +32,7 @@ export default function Wrapper({ children }: Props) {
                   color="#eeb9be"
                   size="50"
                 />
-                <span>일정</span>
+                <span>캘린더</span>
               </div>
             </Link>
 

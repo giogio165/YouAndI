@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { auth, database } from '../../firebase'
 import 'react-datepicker/dist/react-datepicker.css'
-import { ref, set } from 'firebase/database'
+import { ref, set, serverTimestamp } from 'firebase/database'
 
 //회원가입 화면
 export default function SignUp() {
@@ -120,28 +120,25 @@ export default function SignUp() {
         phoneNumber1,
         phoneNumber2,
         diaryNm,
+        createdAt: serverTimestamp(),
       }
 
       const userRef = ref(database, 'users/' + user.uid)
       await set(userRef, userData)
 
-      // Create user-specific paths in your database
-      const userCalendarPath = `calendars/${user.uid}`
-      const userAlbumPath = `albums/${user.uid}`
-
-      // Store user-specific data in the database
-      await set(ref(database, userCalendarPath), {
-        // User-specific calendar data
-        // ...
-      })
-
-      await set(ref(database, userAlbumPath), {
-        // User-specific album data
-        // ...
-      })
-
+      // // Create user-specific paths in your database
+      // const userCalendarPath = `calendars/${user.uid}`
+      // const userAlbumPath = `albums/${user.uid}`
+      // // Store user-specific data in the database
+      // await set(ref(database, userCalendarPath), {
+      //   // User-specific calendar data
+      //   // ...
+      // })
+      // await set(ref(database, userAlbumPath), {
+      //   // User-specific album data
+      //   // ...
+      // })
       console.log('User registered:', user)
-
       router.push('/sign-in')
     } catch (error: any) {
       console.error('Error during registration:', error.message)
