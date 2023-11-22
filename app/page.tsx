@@ -20,7 +20,6 @@ export default function Home() {
   const router = useRouter()
   const [userData, setUserData] = useState<UserInfo>()
   const [notifications, setNotifications] = useState<Array<string>>([])
-  console.log(notifications)
   const signupDate = userData?.createdAt
 
   const calculateDay = (signupDate: number | undefined) => {
@@ -204,24 +203,25 @@ export default function Home() {
 
         .home-main__alarm-wrapper {
           display: flex;
+          align-items: center;
           flex-direction: column;
           gap: 20px;
         }
 
         .home-main__alarm-item {
           width: fit-content;
+          background-color: #eeb9be;
           padding: 20px;
-          color: white;
           border-radius: 20px;
         }
 
         .home-main__alarm-item--read {
-          background-color: #eeb9be;
+          color: black;
         }
 
-        .home-main__alarm-item--new {
+        {/* .home-main__alarm-item--new {
           background-color: #df5b7b;
-        }
+        } */}
       `}</style>
     </Wrapper>
   )
