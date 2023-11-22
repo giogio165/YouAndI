@@ -2,39 +2,81 @@
 
 import Wrapper from './components/Wrapper'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
-import { auth } from '../firebase'
+import { auth, database } from '../firebase'
+import { ref, onValue } from 'firebase/database'
+
+interface UserInfo {
+  createdAt: number
+  diaryNm: string
+  email: string
+  phoneNumber1: string
+  phoneNumber2: string
+}
 
 //1. 홈화면
 export default function Home() {
   const router = useRouter()
+  const [userData, setUserData] = useState<UserInfo>()
+  const [notifications, setNotifications] = useState<Array<string>>([])
+  console.log(notifications)
+  const signupDate = userData?.createdAt
 
-  const alarms = [
-    { content: '남자친구 님이 메모를 새로 작성했습니다.', isRead: false },
-    { content: '남자친구님이 사진을 추가하셨습니다.', isRead: true },
-    { content: '남자친구님이 사진에 댓글을 추가하셨습니다.', isRead: true },
-    { content: '남자친구님이 일정을 등록하였습니다.', isRead: true },
-  ]
+  const calculateDay = (signupDate: number | undefined) => {
+    if (signupDate) {
+      const todayDate = new Date().getTime()
+      const differenceInMs = todayDate - signupDate
+      const differenceInDays = Math.floor(
+        differenceInMs / (1000 * 60 * 60 * 24),
+      )
+      return differenceInDays
+    }
+    return null
+  }
+
+  const dDay = calculateDay(signupDate)
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       if (!user) {
         router.push('/sign-in')
+      } else {
+        const userRef = ref(database, `users/${user.uid}`)
+        onValue(userRef, (snapshot) => {
+          setUserData(snapshot.val())
+        })
+
+        const contentsRef = ref(database, `contents/${user.uid}`)
+        onValue(contentsRef, (snapshot) => {
+          console.log('snapshot', snapshot)
+          const newNotification = '앨범에 사진/영상이 추가됐습니다 '
+          setNotifications((prevNotifications) => [
+            ...prevNotifications,
+            newNotification,
+          ])
+        })
+
+        const eventsRef = ref(database, `events/${user.uid}`)
+        onValue(eventsRef, (snapshot) => {
+          const newNotification = '캘린더에 일정이 추가됐습니다 '
+          setNotifications((prevNotifications) => [
+            ...prevNotifications,
+            newNotification,
+          ])
+        })
       }
     })
-    return () => unsubscribe()
+
+    return () => {
+      unsubscribeAuth()
+    }
   }, [router])
 
   return (
     <Wrapper>
       <div className="direction-changer">
-        {/* header: 달력 아이콘, 하트 모으기 */}
-        <header className="home-header">
-          {/* <div className="heart-wrapper">
-            <div className="heart-icon">💗</div>
-          </div> */}
-        </header>
+        <header className="home-header"></header>
 
         {/* main */}
         <main className="home-main">
@@ -49,7 +91,9 @@ export default function Home() {
             <div className="home-main__counter-wrapper">
               <div className="home-main__counter-title">만난지</div>
               <div>
-                <span style={{ color: '#DF5B7B', fontWeight: '600' }}>500</span>
+                <span style={{ color: '#DF5B7B', fontWeight: '600' }}>
+                  {dDay}
+                </span>
                 <span className="home-main__counter-counting">일 째</span>
               </div>
             </div>
@@ -63,16 +107,13 @@ export default function Home() {
 
           {/* 새로운 활동 알림 */}
           <div className="home-main__alarm-wrapper">
-            {alarms.map((alarm) => (
-              <div
-                key={alarm.content}
-                className={
-                  alarm.isRead === true
-                    ? 'home-main__alarm-item home-main__alarm-item--read'
-                    : 'home-main__alarm-item home-main__alarm-item--new'
-                }
-              >
-                {alarm.content}
+            {notifications.map((notification, index) => (
+              <div key={index} className="home-main__notification-item">
+                <div className="home-main__alarm-item">
+                  <div className="home-main__alarm-item--read">
+                    {notification}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
