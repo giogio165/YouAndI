@@ -46,23 +46,44 @@ export default function Home() {
           setUserData(snapshot.val())
         })
 
-        const contentsRef = ref(database, `contents/${user.uid}`)
-        onValue(contentsRef, (snapshot) => {
-          console.log('snapshot', snapshot)
-          const newNotification = '앨범에 사진/영상이 추가됐습니다 '
-          setNotifications((prevNotifications) => [
-            ...prevNotifications,
-            newNotification,
-          ])
-        })
-
         const eventsRef = ref(database, `events/${user.uid}`)
         onValue(eventsRef, (snapshot) => {
-          const newNotification = '캘린더에 일정이 추가됐습니다 '
-          setNotifications((prevNotifications) => [
-            ...prevNotifications,
-            newNotification,
-          ])
+          const newEventContainer = snapshot.val()
+          if (newEventContainer) {
+            Object.keys(newEventContainer).forEach((eventId) => {
+              const event = newEventContainer[eventId]
+              const title = event.title || 'Untitled Event'
+              const newNotification = `새 일정이 추가됐습니다 :${title}`
+              setNotifications((prevNotifications) => [
+                ...prevNotifications,
+                newNotification,
+              ])
+            })
+          }
+        })
+
+        const albumRef = ref(database, `contents/${user.uid}`)
+        onValue(albumRef, (snapshot) => {
+          const newAlbumContainer = snapshot.val()
+          if (newAlbumContainer) {
+            Object.keys(newAlbumContainer).forEach((eventId) => {
+              const event = newAlbumContainer[eventId]
+              const type = event.type || 'Undefined Event'
+              if (type.startsWith('image/')) {
+                const newNotification = '앨범에 사진이 추가됐습니다.'
+                setNotifications((preNotifications) => [
+                  ...preNotifications,
+                  newNotification,
+                ])
+              } else {
+                const newNotification = '앨범에 동영상이 추가됐습니다.'
+                setNotifications((preNotifications) => [
+                  ...preNotifications,
+                  newNotification,
+                ])
+              }
+            })
+          }
         })
       }
     })
@@ -72,6 +93,7 @@ export default function Home() {
     }
   }, [router])
 
+  console.log('노티', notifications)
   return (
     <Wrapper>
       <div className="direction-changer">
