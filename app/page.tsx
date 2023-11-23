@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { auth, database } from '../firebase'
 import { ref, onValue } from 'firebase/database'
 
-interface UserInfo {
+export interface UserInfo {
   createdAt: number
   diaryNm: string
   email: string

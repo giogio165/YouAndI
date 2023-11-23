@@ -1,30 +1,103 @@
 'use client'
 
 import Wrapper from '../components/Wrapper'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+import { auth, database } from '../../firebase'
+import { ref, onValue, remove } from 'firebase/database'
+import { UserInfo } from '../page'
+import DeleteConfirmation from './DeleteConfirmation'
 
 //환경설정/프로필 화면
 export default function Setting() {
+  const router = useRouter()
+  const [userData, setUserData] = useState<UserInfo>()
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  console.log('삭제', showConfirmation)
+
+  const diaryNm = userData ? userData.diaryNm : ''
+
+  const diaryCreatedDate = userData ? userData.createdAt : ''
+  const date = diaryCreatedDate ? new Date(diaryCreatedDate) : undefined
+  const calDate = date?.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+  const handleDeleteUserData = () => {
+    setShowConfirmation(true)
+  }
+
+  const handleCancelDeletion = () => {
+    setShowConfirmation(false)
+  }
+
+  const handleConfirmDeletion = () => {
+    const user = auth.currentUser
+
+    if (user) {
+      const userId = user.uid
+      const userRef = ref(database, `users/${userId}`)
+
+      remove(userRef)
+        .then(() => {
+          console.log('User data deleted successfully')
+        })
+        .catch((error) => {
+          console.error('Error deleting user data:', error.message)
+        })
+    }
+  }
+
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        router.push('/sign-in')
+      } else {
+        const userRef = ref(database, `users/${user.uid}`)
+        onValue(userRef, (snapshot) => {
+          setUserData(snapshot.val())
+        })
+      }
+    })
+
+    return () => {
+      unsubscribeAuth()
+    }
+  }, [router])
+
   return (
     <>
       <Wrapper>
-        <div className="setting-list">
-          <div className="setting-item title">
-            <div>기록장 이름</div>
-            <div className="user-title">
-              <div>말랑콩떡</div>
-              <button>수정</button>
+        <div>
+          <div className="setting-list">
+            <div className="setting-item title">
+              <div>기록장 이름</div>
+              <div className="user-title">
+                <div>{diaryNm}</div>
+                <button>수정</button>
+              </div>
+            </div>
+
+            <div className="setting-item start-date">
+              <div>기록장 생성일</div>
+              <div>{calDate}</div>
+            </div>
+
+            <div className="setting-item secession">
+              <div>파트너와 헤어지기</div>
+              <div onClick={handleDeleteUserData} style={{ cursor: 'pointer' }}>
+                (데이터 영구삭제)
+              </div>
             </div>
           </div>
-
-          <div className="setting-item start-date">
-            <div>기록장 생성일</div>
-            <div>2022/01/01</div>
-          </div>
-
-          <div className="setting-item secession">
-            <div>파트너와 헤어지기</div>
-            <div>(데이터 영구삭제)</div>
-          </div>
+          {showConfirmation && (
+            <DeleteConfirmation
+              onCancel={handleCancelDeletion}
+              onConfirm={handleConfirmDeletion}
+            />
+          )}
         </div>
       </Wrapper>
 
