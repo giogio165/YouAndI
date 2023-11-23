@@ -33,6 +33,13 @@ export default function Home() {
     return null
   }
 
+  const goToAlbum = () => {
+    router.push('/history')
+  }
+
+  const goToCalender = () => {
+    router.push('/calendar')
+  }
   const dDay = calculateDay(signupDate)
 
   useEffect(() => {
@@ -129,10 +136,18 @@ export default function Home() {
             {notifications.map((notification, index) => (
               <div key={index} className="home-main__notification-item">
                 <div className="home-main__alarm-item">
-                  <div className="home-main__alarm-item--read">
-                    {notification.type === 'calendar'
-                      ? notification.title
-                      : notification.content}
+                  {/* 캘린더 */}
+                  <div
+                    onClick={goToCalender}
+                    className="home-main__alarm-item--read"
+                  >
+                    {notification.title}
+                  </div>
+                  <div
+                    onClick={goToAlbum}
+                    className="home-main__alarm-item--read"
+                  >
+                    {notification.content}
                   </div>
                 </div>
               </div>
