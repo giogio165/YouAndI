@@ -1,5 +1,4 @@
 'use client'
-
 import Wrapper from './components/Wrapper'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -53,7 +52,10 @@ export default function Home() {
             Object.keys(newEventContainer).forEach((eventId) => {
               const event = newEventContainer[eventId]
               const title = event.title || 'Untitled Event'
-              const newNotification = `새 일정이 추가됐습니다 :${title}`
+              const newNotification = {
+                type: 'calendar',
+                title: `새 일정이 추가됐습니다 :${title}`,
+              }
               setNotifications((prevNotifications) => [
                 ...prevNotifications,
                 newNotification,
@@ -69,19 +71,16 @@ export default function Home() {
             Object.keys(newAlbumContainer).forEach((eventId) => {
               const event = newAlbumContainer[eventId]
               const type = event.type || 'Undefined Event'
-              if (type.startsWith('image/')) {
-                const newNotification = '앨범에 사진이 추가됐습니다.'
-                setNotifications((preNotifications) => [
-                  ...preNotifications,
-                  newNotification,
-                ])
-              } else {
-                const newNotification = '앨범에 동영상이 추가됐습니다.'
-                setNotifications((preNotifications) => [
-                  ...preNotifications,
-                  newNotification,
-                ])
+              const notification = {
+                type: 'album',
+                content: type.startsWith('image/')
+                  ? '앨범에 사진이 추가됐습니다.'
+                  : '앨범에 동영상이 추가됐습니다.',
               }
+              setNotifications((preNotifications) => [
+                ...preNotifications,
+                notification,
+              ])
             })
           }
         })
@@ -93,7 +92,6 @@ export default function Home() {
     }
   }, [router])
 
-  console.log('노티', notifications)
   return (
     <Wrapper>
       <div className="direction-changer">
@@ -132,7 +130,9 @@ export default function Home() {
               <div key={index} className="home-main__notification-item">
                 <div className="home-main__alarm-item">
                   <div className="home-main__alarm-item--read">
-                    {notification}
+                    {notification.type === 'calendar'
+                      ? notification.title
+                      : notification.content}
                   </div>
                 </div>
               </div>
